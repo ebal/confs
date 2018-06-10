@@ -1,0 +1,79 @@
+{
+
+  "_comment": "This is a CentOS 7.5 Qemu Builder example",
+
+  "description": "\tMinimal CentOS 7 Qemu Image\n__________________________________________",
+
+
+  "variables": {
+    "7.5":      "1804",
+    "checksum": "714acc0aefb32b7d51b515e25546835e55a90da9fb00417fbee2d03a62801efd",
+
+     "virtual_name": "centos7min.qcow2",
+     "virtual_dir":  "centos7",
+     "virtual_size": "20480",
+     "virtual_mem":  "4096M",
+
+     "Password": "password",
+
+     "ansible_playbook": "testrole.yml"
+  },
+
+
+  "builders": [
+    {
+        "type": "qemu",
+
+        "headless": true,
+
+        "iso_url": "http://ftp.otenet.gr/linux/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-{{user `7.5`}}.iso",
+        "iso_checksum": "{{user `checksum`}}",
+        "iso_checksum_type": "sha256",
+
+        "communicator": "ssh",
+
+        "ssh_username": "root",
+        "ssh_password": "{{user `Password`}}",
+        "ssh_timeout":  "3600s",
+
+        "boot_command":[  
+          "<tab> text ",
+          "console=ttyS0,115200n8 ",
+          "ks=https://raw.githubusercontent.com/ebal/confs/master/Kickstart/CentOS7-ks.cfg ",
+          "nameserver=9.9.9.9 ",
+          "<enter><wait> "
+        ],
+        "boot_wait": "0s",
+
+        "shutdown_timeout": "30m",
+
+	"accelerator": "kvm",
+	"disk_size":   "{{ user `virtual_size` }}",
+	"format":      "qcow2",
+	"qemuargs":[  
+	    [ "-m",      "{{ user `virtual_mem` }}" ],
+            [ "-serial", "file:serial.out" ]
+	],
+
+        "vm_name":          "{{ user `virtual_name` }}",
+        "output_directory": "{{ user `virtual_dir` }}"
+    }
+  ],
+
+
+  "provisioners":[  
+    {  
+      "type":          "ansible",
+      "playbook_file": "{{ user `ansible_playbook` }}"
+    }
+  ],
+
+
+  "post-processors":[  
+      {  
+          "type":   "compress",
+          "format": "lz4",
+          "output": "{{.BuildName}}.lz4"
+      }
+  ]
+}
